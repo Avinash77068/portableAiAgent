@@ -2,11 +2,12 @@ const { TOOL_SCHEMAS, executeReadOnlyTool } = require('./tools.cjs')
 const { readFileIfExists, writeFile } = require('./fileTools.cjs')
 const { diffLines } = require('./diff.cjs')
 const { log } = require('../ai/logger.cjs')
-const { initializeHardware } = require('../hardware/HardwareManager.cjs')
+const { computeAIConfig } = require('../hardware/HardwareManager.cjs')
 
 const MAX_ITERATIONS = 14
 const MAX_STALL_NUDGES = 4
 const MAX_TOOL_RESULT_CHARS = 6000
+const MAX_REQUEST_ATTEMPTS = 4
 
 const SYSTEM_PROMPT = `You are a coding assistant with tool access to a local repository.
 Use list_files and search_files to explore, and read_file to inspect a file before changing it.
@@ -45,7 +46,7 @@ class AgentSession {
   // original problem statement anchored - so requests stay under the model's
   // context window instead of failing outright once it fills up.
   trimToFit() {
-    const contextLength = initializeHardware().recommendedAIConfig.contextLength
+    const contextLength = computeAIConfig(this.server.selectedModel).contextLength
     const charBudget = contextLength * 3
     const totalChars = () => this.messages.reduce((sum, m) => sum + (typeof m.content === 'string' ? m.content.length : 0), 0)
 
@@ -61,6 +62,7 @@ class AgentSession {
 
   async requestCompletion() {
     this.trimToFit()
+    const maxTokens = computeAIConfig(this.server.selectedModel).maxOutputTokens
     const response = await fetch(`http://127.0.0.1:${this.server.port}/v1/chat/completions`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -69,7 +71,7 @@ class AgentSession {
         tools: TOOL_SCHEMAS,
         tool_choice: 'auto',
         temperature: 0.2,
-        max_tokens: 1024,
+        max_tokens: maxTokens,
       }),
     })
     if (!response.ok) {
@@ -87,6 +89,18 @@ class AgentSession {
     if (!message) throw new Error('Local AI returned an unexpected response')
     return message
   }
+  async requestCompletionWithRetry() {
+    let lastError = null
+    for (let attempt = 1; attempt <= MAX_REQUEST_ATTEMPTS; attempt += 1) {
+      try {
+        return await this.requestCompletion()
+      } catch (error) {
+        lastError = error
+        log(`Agent request attempt ${attempt}/${MAX_REQUEST_ATTEMPTS} failed: ${error instanceof Error ? error.message : 'unknown error'}`)
+      }
+    }
+    throw lastError
+  }
 
   async run(problem, onEvent) {
     this.messages.push({ role: 'user', content: `Repository root: ${this.repoRoot}\n\nProblem: ${problem}` })
@@ -97,11 +111,11 @@ class AgentSession {
 
       let message
       try {
-        message = await this.requestCompletion()
+        message = await this.requestCompletionWithRetry()
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Local AI request failed'
-        log(`Agent request failed: ${errorMessage}`)
-        onEvent({ type: 'error', message: errorMessage })
+        log(`Agent request failed after ${MAX_REQUEST_ATTEMPTS} attempts: ${errorMessage}`)
+        onEvent({ type: 'error', message: 'The local model ran into a problem and could not continue after several attempts. Try rephrasing the problem or asking for a smaller change.' })
         return
       }
 

@@ -47,9 +47,9 @@ app.whenReady().then(() => {
   initializeDatabase()
   initializeHardware()
   registerChatHandlers()
-  registerHardwareHandlers()
   registerAttachmentHandlers()
   aiManager = registerAIHandlers()
+  registerHardwareHandlers(aiManager)
   registerAgentHandlers(aiManager)
   createWindow()
 

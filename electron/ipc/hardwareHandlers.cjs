@@ -1,8 +1,11 @@
 const { ipcMain } = require('electron')
-const { initializeHardware } = require('../hardware/HardwareManager.cjs')
+const { initializeHardware, computeAIConfig } = require('../hardware/HardwareManager.cjs')
 
-const registerHardwareHandlers = () => {
-  ipcMain.handle('portableai:hardware:get-info', () => initializeHardware())
+const registerHardwareHandlers = (aiManager) => {
+  ipcMain.handle('portableai:hardware:get-info', () => ({
+    ...initializeHardware(),
+    recommendedAIConfig: computeAIConfig(aiManager.getSelectedModel()),
+  }))
 }
 
 module.exports = { registerHardwareHandlers }

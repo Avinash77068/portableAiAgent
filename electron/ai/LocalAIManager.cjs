@@ -1,4 +1,4 @@
-const { initializeHardware } = require('../hardware/HardwareManager.cjs')
+const { computeAIConfig } = require('../hardware/HardwareManager.cjs')
 const { listModels, validateModel, readSelectedModelId, writeSelectedModelId } = require('../model/ModelManager.cjs')
 const { LlamaServerManager } = require('./LlamaServerManager.cjs')
 const { AI_STATES } = require('./types.cjs')
@@ -82,8 +82,7 @@ class LocalAIManager {
   }
 
   async buildContext(messages, attachments = []) {
-    const hardware = initializeHardware()
-    const maxCharacters = hardware.recommendedAIConfig.contextLength * 4
+    const maxCharacters = computeAIConfig(this.getSelectedModel()).contextLength * 4
     const normalized = messages
       .filter((message) => message.role === 'user' || message.role === 'assistant')
       .map((message) => ({ role: message.role, content: message.content }))
@@ -111,8 +110,7 @@ class LocalAIManager {
     const selectedModel = this.getSelectedModel()
     if (!selectedModel) throw new Error('No local model available')
     validateModel(selectedModel)
-    const hardware = initializeHardware()
-    return this.server.generate(await this.buildContext(messages, attachments), hardware.recommendedAIConfig, onDelta)
+    return this.server.generate(await this.buildContext(messages, attachments), computeAIConfig(selectedModel), onDelta)
   }
 
   async start() {

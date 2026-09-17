@@ -1,5 +1,5 @@
 const os = require('node:os')
-const { calculateMemoryPressure, calculatePerformanceProfile, calculateRecommendedThreads, getRecommendedAIConfig } = require('./performanceProfile.cjs')
+const { calculateMemoryPressure, calculatePerformanceProfile, calculateRecommendedThreads, getRecommendedAIConfig, getModelAwareAIConfig } = require('./performanceProfile.cjs')
 
 const getPhysicalCoreCount = () => {
   try {
@@ -96,4 +96,9 @@ const initializeHardware = () => {
   return hardwareSnapshot
 }
 
-module.exports = { detectHardware, initializeHardware }
+// Hardware facts (RAM, CPU) are cached for the app's lifetime since they don't
+// change at runtime, but the AI config depends on which model is selected, so
+// it's computed fresh here rather than baked into that cached snapshot.
+const computeAIConfig = (selectedModel) => getModelAwareAIConfig(initializeHardware(), selectedModel)
+
+module.exports = { detectHardware, initializeHardware, computeAIConfig }

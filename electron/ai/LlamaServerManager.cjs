@@ -3,7 +3,7 @@ const path = require('node:path')
 const { spawn } = require('node:child_process')
 const http = require('node:http')
 const { resolvePortableRoot } = require('../database/database.cjs')
-const { initializeHardware } = require('../hardware/HardwareManager.cjs')
+const { computeAIConfig } = require('../hardware/HardwareManager.cjs')
 const { findAvailablePort } = require('./portManager.cjs')
 const { AI_STATES } = require('./types.cjs')
 const { log } = require('./logger.cjs')
@@ -66,8 +66,7 @@ class LlamaServerManager {
   }
 
   buildArguments(modelPath, port) {
-    const hardware = initializeHardware()
-    const config = hardware.recommendedAIConfig
+    const config = computeAIConfig(this.selectedModel)
     const args = [
       '--model', modelPath,
       '--host', '127.0.0.1',
