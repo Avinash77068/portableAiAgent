@@ -1,0 +1,102 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: dark;
+  --app-bg: #171717;
+  --main-bg: #212121;
+  --header-bg: rgba(33, 33, 33, 0.92);
+  --sidebar-bg: #171717;
+  --surface-soft: rgba(255, 255, 255, 0.04);
+  --surface-strong: rgba(255, 255, 255, 0.08);
+  --surface-hover: rgba(255, 255, 255, 0.08);
+  --composer-bg: #2f2f2f;
+  --modal-bg: #2f2f2f;
+  --button-primary: #ececec;
+  --button-primary-text: #0d0d0d;
+  --text-primary: #ececec;
+  --text-secondary: #b4b4b4;
+  --text-muted: #8e8ea0;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.2);
+  --success: #10a37f;
+  --accent: #ececec;
+  --shadow: 0 24px 40px rgba(0, 0, 0, 0.35);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --app-bg: #ffffff;
+  --main-bg: #ffffff;
+  --header-bg: rgba(255, 255, 255, 0.92);
+  --sidebar-bg: #f9f9f9;
+  --surface-soft: rgba(0, 0, 0, 0.03);
+  --surface-strong: rgba(0, 0, 0, 0.05);
+  --surface-hover: rgba(0, 0, 0, 0.05);
+  --composer-bg: #ffffff;
+  --modal-bg: #ffffff;
+  --button-primary: #0d0d0d;
+  --button-primary-text: #ffffff;
+  --text-primary: #0d0d0d;
+  --text-secondary: #5d5d5d;
+  --text-muted: #8e8ea0;
+  --border: rgba(0, 0, 0, 0.1);
+  --border-strong: rgba(0, 0, 0, 0.18);
+  --success: #10a37f;
+  --accent: #0d0d0d;
+  --shadow: 0 20px 32px rgba(15, 23, 42, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  min-width: 1000px;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  background: var(--app-bg);
+  color: var(--text-primary);
+}
+
+body {
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+input,
+textarea,
+button {
+  font: inherit;
+}
+
+button {
+  border: none;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.48);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}

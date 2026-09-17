@@ -1,0 +1,63 @@
+{
+  "name": "portableaiagent",
+  "private": true,
+  "version": "0.1.0",
+  "description": "PORTABLE.AI desktop shell for a future local private AI assistant.",
+  "main": "electron/main.cjs",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k \"vite --host 127.0.0.1\" \"wait-on http://127.0.0.1:5174 && electron .\"",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint .",
+    "preview": "vite preview --host 127.0.0.1",
+    "dist": "npm run build && electron-builder --win portable --x64 --publish never",
+    "dist:mac": "npm run build && electron-builder --mac dir --publish never",
+    "usb:prepare": "node scripts/prepare-usb.cjs",
+    "usb:build": "npm run dist:mac && npm run usb:prepare",
+    "postinstall": "electron-rebuild -f -w better-sqlite3"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.4.1",
+    "lucide-react": "^0.542.0",
+    "pdf-parse": "^1.1.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.1",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "concurrently": "^9.2.0",
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.0",
+    "oxlint": "^1.81.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~6.0.2",
+    "vite": "^8.3.0",
+    "wait-on": "^9.0.0"
+  },
+  "build": {
+    "appId": "com.portableai.desktop",
+    "productName": "PORTABLE.AI",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*.cjs",
+      "package.json"
+    ],
+    "win": {
+      "target": "portable",
+      "artifactName": "PORTABLE.AI.exe",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "mac": {
+      "target": "dir",
+      "category": "public.app-category.productivity"
+    }
+  }
+}

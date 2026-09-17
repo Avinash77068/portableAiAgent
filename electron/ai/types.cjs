@@ -1,0 +1,10 @@
+const AI_STATES = Object.freeze({
+  STOPPED: 'STOPPED',
+  STARTING: 'STARTING',
+  READY: 'READY',
+  GENERATING: 'GENERATING',
+  STOPPING: 'STOPPING',
+  ERROR: 'ERROR',
+})
+
+module.exports = { AI_STATES }
