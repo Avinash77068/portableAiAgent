@@ -13,7 +13,8 @@
     "dist": "npm run build && electron-builder --win portable --x64 --publish never",
     "dist:mac": "npm run build && electron-builder --mac dir --publish never",
     "usb:prepare": "node scripts/prepare-usb.cjs",
-    "usb:build": "npm run dist:mac && npm run usb:prepare",
+    "usb:dmg": "node scripts/create-dmg.cjs",
+    "usb:build": "npm run dist:mac && npm run usb:prepare && npm run usb:dmg",
     "postinstall": "electron-rebuild -f -w better-sqlite3"
   },
   "dependencies": {
