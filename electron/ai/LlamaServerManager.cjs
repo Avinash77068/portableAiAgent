@@ -8,7 +8,7 @@ const { findAvailablePort } = require('./portManager.cjs')
 const { AI_STATES } = require('./types.cjs')
 const { log } = require('./logger.cjs')
 
-const REQUEST_TIMEOUT_MS = 60000
+const REQUEST_TIMEOUT_MS = 180000
 const HEALTH_TIMEOUT_MS = 60000
 
 class LlamaServerManager {

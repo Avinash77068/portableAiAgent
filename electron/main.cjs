@@ -6,6 +6,7 @@ const { initializeHardware } = require('./hardware/HardwareManager.cjs')
 const { registerHardwareHandlers } = require('./ipc/hardwareHandlers.cjs')
 const { registerAIHandlers } = require('./ipc/aiHandlers.cjs')
 const { registerAttachmentHandlers } = require('./ipc/attachmentHandlers.cjs')
+const { registerAgentHandlers } = require('./ipc/agentHandlers.cjs')
 
 const isDev = !app.isPackaged
 let aiManager = null
@@ -49,6 +50,7 @@ app.whenReady().then(() => {
   registerHardwareHandlers()
   registerAttachmentHandlers()
   aiManager = registerAIHandlers()
+  registerAgentHandlers(aiManager)
   createWindow()
 
   if (aiManager.getSelectedModel() && aiManager.server.getRuntimePath()) {

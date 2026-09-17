@@ -26,11 +26,21 @@ const calculatePerformanceProfile = (totalRamBytes) => {
 const getRecommendedAIConfig = (hardwareInfo) => {
   if (hardwareInfo.performanceProfile === 'HIGH_PERFORMANCE') {
     return {
-      contextLength: 8192,
-      maxOutputTokens: 4096,
+      contextLength: 16384,
+      maxOutputTokens: 6144,
       temperature: 0.7,
       recommendedThreads: hardwareInfo.recommendedThreads,
       gpuLayers: 'auto',
+    }
+  }
+
+  if (hardwareInfo.performanceProfile === 'BALANCED') {
+    return {
+      contextLength: 8192,
+      maxOutputTokens: 3072,
+      temperature: 0.7,
+      recommendedThreads: hardwareInfo.recommendedThreads,
+      gpuLayers: 0,
     }
   }
 

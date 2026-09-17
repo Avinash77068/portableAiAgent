@@ -7,17 +7,20 @@ import {
   Settings,
   ShieldCheck,
   SunMedium,
+  Wrench,
   X,
 } from 'lucide-react'
 import { welcomePrompts } from './data/demoData'
 import { MessageBubble, StreamingBubble } from './components/MessageBubble'
 import { AttachmentPreview } from './components/AttachmentPreview'
+import { AgentPanel } from './components/AgentPanel'
 import { Sidebar } from './components/Sidebar'
 import { SplashScreen } from './components/SplashScreen'
 import { useTheme, type ThemeMode } from './hooks/useTheme'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useSplashScreen } from './hooks/useSplashScreen'
 import { useAttachments, type PendingAttachment, supportedAttachmentExtensions } from './hooks/useAttachments'
+import { useAgentSession } from './hooks/useAgentSession'
 import { createConversationTitle, groupConversations } from './utils/conversations'
 import { formatAIStatus, formatMemory, formatProfile } from './utils/formatters'
 import type { PortableAIConversation, PortableAIHardwareInfo, PortableAIMessage, PortableAIModel, PortableAIStatus } from './portableAI'
@@ -37,6 +40,8 @@ function App() {
   const [searchValue, setSearchValue] = useState('')
   const [draft, setDraft] = useState('')
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isAgentOpen, setIsAgentOpen] = useState(false)
+  const agentSession = useAgentSession()
   const [toast, setToast] = useState<ToastState | null>(null)
   const [isSending, setIsSending] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -420,6 +425,9 @@ function App() {
           </div>
 
           <div className="flex items-center gap-1">
+            <button type="button" className="inline-flex size-9 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]" onClick={() => setIsAgentOpen(true)} aria-label="Open repo assistant" title="Repo Assistant">
+              <Wrench size={17} />
+            </button>
             <button
               type="button"
               className="inline-flex size-9 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"
@@ -513,6 +521,23 @@ function App() {
           </div>
         )}
       </main>
+
+      {isAgentOpen && (
+        <AgentPanel
+          repoRoot={agentSession.repoRoot}
+          autoApply={agentSession.autoApply}
+          isRunning={agentSession.isRunning}
+          steps={agentSession.steps}
+          onSelectFolder={() => void agentSession.selectFolder()}
+          onClearFolder={() => void agentSession.clearFolder()}
+          onSetAutoApply={(value) => void agentSession.setAutoApply(value)}
+          onRun={(problem) => void agentSession.run(problem)}
+          onApproveDiff={() => void agentSession.approveDiff()}
+          onRejectDiff={() => void agentSession.rejectDiff()}
+          onStop={() => void agentSession.stop()}
+          onClose={() => setIsAgentOpen(false)}
+        />
+      )}
 
       {isSettingsOpen && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-[rgba(15,23,42,0.54)]" onClick={() => setIsSettingsOpen(false)}>

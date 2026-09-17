@@ -44,4 +44,19 @@ contextBridge.exposeInMainWorld('portableAI', {
       return () => ipcRenderer.removeListener('portableai:ai:stream', handler)
     },
   },
+  agent: {
+    selectFolder: () => ipcRenderer.invoke('portableai:agent:select-folder'),
+    getInfo: () => ipcRenderer.invoke('portableai:agent:get-info'),
+    clearFolder: () => ipcRenderer.invoke('portableai:agent:clear-folder'),
+    setAutoApply: (value) => ipcRenderer.invoke('portableai:agent:set-auto-apply', value),
+    run: (problem) => ipcRenderer.invoke('portableai:agent:run', problem),
+    approveDiff: () => ipcRenderer.invoke('portableai:agent:approve-diff'),
+    rejectDiff: () => ipcRenderer.invoke('portableai:agent:reject-diff'),
+    stop: () => ipcRenderer.invoke('portableai:agent:stop'),
+    onEvent: (listener) => {
+      const handler = (_, event) => listener(event)
+      ipcRenderer.on('portableai:agent:event', handler)
+      return () => ipcRenderer.removeListener('portableai:agent:event', handler)
+    },
+  },
 })

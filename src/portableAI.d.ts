@@ -31,6 +31,17 @@ declare global {
         onStatus: (listener: (status: PortableAIStatus) => void) => () => void
         onStream: (listener: (event: PortableAIStreamEvent) => void) => () => void
       }
+      agent: {
+        selectFolder: () => Promise<string | null>
+        getInfo: () => Promise<PortableAIAgentInfo>
+        clearFolder: () => Promise<null>
+        setAutoApply: (value: boolean) => Promise<boolean>
+        run: (problem: string) => Promise<boolean>
+        approveDiff: () => Promise<boolean>
+        rejectDiff: () => Promise<boolean>
+        stop: () => Promise<boolean>
+        onEvent: (listener: (event: PortableAIAgentEvent) => void) => () => void
+      }
     }
   }
 }
@@ -110,5 +121,25 @@ export type PortableAIStreamEvent = {
   type: 'delta'
   delta: string
 }
+
+export type PortableAIAgentInfo = {
+  repoRoot: string | null
+  autoApply: boolean
+}
+
+export type PortableAIDiffRow = {
+  type: 'context' | 'add' | 'remove'
+  line: string
+}
+
+export type PortableAIAgentEvent =
+  | { type: 'thinking' }
+  | { type: 'tool-call'; name: string; args: Record<string, unknown> }
+  | { type: 'tool-result'; name: string; result: string }
+  | { type: 'diff-pending'; path: string; rows: PortableAIDiffRow[] }
+  | { type: 'diff-applied'; path: string; rows: PortableAIDiffRow[]; auto: boolean }
+  | { type: 'diff-rejected'; path: string }
+  | { type: 'final'; message: string }
+  | { type: 'error'; message: string }
 
 export {}
