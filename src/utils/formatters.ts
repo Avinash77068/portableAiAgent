@@ -10,7 +10,7 @@ export const formatProfile = (profile: PortableAIHardwareInfo['performanceProfil
 
 export const formatAIStatus = (status: PortableAIStatus | null) => {
   if (!status) return 'Starting...'
-  if (status.state === 'READY') return 'AI Ready'
+  if (status.state === 'READY') return 'AI Ready Made by Avinash'
   if (status.state === 'GENERATING') return 'Generating...'
   if (status.state === 'STARTING') return 'Loading Model...'
   if (status.state === 'STOPPING') return 'Stopping...'

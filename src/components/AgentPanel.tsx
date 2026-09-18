@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { FolderOpen, Loader2, Search, Send, Square, Wrench, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { ArrowLeft, FolderOpen, Loader2, Search, Send, Square, Trash2, Wrench } from 'lucide-react'
 import type { AgentStep, AgentTranscriptEvent } from '../hooks/useAgentSession'
 import { DiffView } from './DiffView'
 
@@ -12,14 +12,22 @@ type AgentPanelProps = {
   onClearFolder: () => void
   onSetAutoApply: (value: boolean) => void
   onRun: (problem: string) => void
+  onClearHistory: () => void
   onApproveDiff: () => void
   onRejectDiff: () => void
   onStop: () => void
   onClose: () => void
 }
 
-export function AgentPanel({ repoRoot, autoApply, isRunning, steps, onSelectFolder, onClearFolder, onSetAutoApply, onRun, onApproveDiff, onRejectDiff, onStop, onClose }: AgentPanelProps) {
+export function AgentPanel({ repoRoot, autoApply, isRunning, steps, onSelectFolder, onClearFolder, onSetAutoApply, onRun, onClearHistory, onApproveDiff, onRejectDiff, onStop, onClose }: AgentPanelProps) {
   const [problem, setProblem] = useState('')
+  const transcriptRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    const container = transcriptRef.current
+    if (!container) return
+    container.scrollTop = container.scrollHeight
+  }, [steps, isRunning])
 
   const handleRun = () => {
     const trimmed = problem.trim()
@@ -29,62 +37,65 @@ export function AgentPanel({ repoRoot, autoApply, isRunning, steps, onSelectFold
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-[rgba(15,23,42,0.54)]" onClick={onClose}>
-      <div className="flex h-[86vh] w-[min(880px,calc(100vw-32px))] flex-col overflow-hidden rounded-[22px] border border-[var(--border)] bg-[var(--modal-bg)] shadow-[0_40px_60px_rgba(15,23,42,0.28)]" onClick={(event) => event.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-[18px]">
-          <div className="flex items-center gap-2 font-semibold"><Wrench size={16} /> Repo Assistant</div>
-          <button type="button" className="inline-flex size-8 items-center justify-center rounded-[10px] border border-[var(--border)] bg-[var(--surface-strong)] text-[var(--text-primary)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-hover)]" onClick={onClose} aria-label="Close repo assistant"><X size={15} /></button>
-        </div>
+    <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col bg-[var(--main-bg)]">
+      <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-[18px]">
+        <div className="flex items-center gap-2 font-semibold"><Wrench size={16} /> Repo Assistant</div>
+        <button type="button" className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]" onClick={onClose}><ArrowLeft size={15} /> Back to Chat</button>
+      </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 border-b border-[var(--border)] px-5 py-3">
-          {repoRoot ? (
-            <>
-              <span className="min-w-0 flex-1 truncate rounded-lg bg-[var(--surface-soft)] px-2.5 py-1.5 text-xs text-[var(--text-secondary)]" title={repoRoot}>{repoRoot}</span>
-              <button type="button" className="rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]" onClick={onSelectFolder} disabled={isRunning}>Change</button>
-              <button type="button" className="rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]" onClick={onClearFolder} disabled={isRunning}>Revoke</button>
-            </>
-          ) : (
-            <button type="button" className="inline-flex items-center gap-2 rounded-lg bg-[var(--button-primary)] px-3 py-1.5 text-sm font-medium text-[var(--button-primary-text)]" onClick={onSelectFolder}>
-              <FolderOpen size={15} /> Grant folder access
-            </button>
-          )}
-          <label className="ml-auto flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-            <input type="checkbox" checked={autoApply} onChange={(event) => onSetAutoApply(event.target.checked)} />
-            Auto-apply changes
-          </label>
-        </div>
+      <div className="flex flex-wrap items-center gap-2.5 border-b border-[var(--border)] px-5 py-3">
+        {repoRoot ? (
+          <>
+            <span className="min-w-0 flex-1 truncate rounded-lg bg-[var(--surface-soft)] px-2.5 py-1.5 text-xs text-[var(--text-secondary)]" title={repoRoot}>{repoRoot}</span>
+            <button type="button" className="rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]" onClick={onSelectFolder} disabled={isRunning}>Change</button>
+            <button type="button" className="rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]" onClick={onClearFolder} disabled={isRunning}>Revoke</button>
+          </>
+        ) : (
+          <button type="button" className="inline-flex items-center gap-2 rounded-lg bg-[var(--button-primary)] px-3 py-1.5 text-sm font-medium text-[var(--button-primary-text)]" onClick={onSelectFolder}>
+            <FolderOpen size={15} /> Grant folder access
+          </button>
+        )}
+        <label className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+          <input type="checkbox" checked={autoApply} onChange={(event) => onSetAutoApply(event.target.checked)} />
+          Auto-apply changes
+        </label>
+        {steps.length > 0 && (
+          <button type="button" className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]" onClick={onClearHistory} disabled={isRunning} title="Clear this panel's history">
+            <Trash2 size={13} /> Clear
+          </button>
+        )}
+      </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-          {steps.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-[var(--text-muted)]">
-              <Search size={22} />
-              <p className="max-w-[46ch] text-sm">Grant a folder, describe a problem, and it will explore the repo, propose fixes, and {autoApply ? 'apply them automatically.' : 'ask you to approve each file change.'}</p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {steps.map(({ id, event }) => <StepView key={id} event={event} onApproveDiff={onApproveDiff} onRejectDiff={onRejectDiff} />)}
-              {isRunning && <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]"><Loader2 size={14} className="animate-spin" /> Working...</div>}
-            </div>
-          )}
-        </div>
-
-        <div className="border-t border-[var(--border)] px-5 py-3.5">
-          <div className="flex items-end gap-2 rounded-[18px] border border-[var(--border)] bg-[var(--surface-soft)] px-3 py-2.5">
-            <textarea
-              rows={1}
-              value={problem}
-              onChange={(event) => setProblem(event.target.value)}
-              onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); handleRun() } }}
-              disabled={isRunning || !repoRoot}
-              placeholder={repoRoot ? 'Describe the problem to fix...' : 'Grant folder access first...'}
-              className="min-h-9 max-h-32 flex-1 resize-none bg-transparent px-1 py-1.5 leading-6 text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"
-            />
-            {isRunning ? (
-              <button type="button" className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--text-primary)] text-[var(--main-bg)]" onClick={onStop} aria-label="Stop agent"><Square size={15} /></button>
-            ) : (
-              <button type="button" className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--button-primary)] text-[var(--button-primary-text)] disabled:cursor-not-allowed disabled:opacity-30" onClick={handleRun} disabled={!problem.trim() || !repoRoot} aria-label="Run"><Send size={15} /></button>
-            )}
+      <div ref={transcriptRef} className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        {steps.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-[var(--text-muted)]">
+            <Search size={22} />
+            <p className="max-w-[46ch] text-sm">Grant a folder, describe a problem, and it will explore the repo, propose fixes, and {autoApply ? 'apply them automatically.' : 'ask you to approve each file change.'}</p>
           </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {steps.map(({ id, event }) => <StepView key={id} event={event} onApproveDiff={onApproveDiff} onRejectDiff={onRejectDiff} />)}
+            {isRunning && <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]"><Loader2 size={14} className="animate-spin" /> Working...</div>}
+          </div>
+        )}
+      </div>
+
+      <div className="border-t border-[var(--border)] px-5 py-3.5">
+        <div className="flex items-end gap-2 rounded-[18px] border border-[var(--border)] bg-[var(--surface-soft)] px-3 py-2.5">
+          <textarea
+            rows={1}
+            value={problem}
+            onChange={(event) => setProblem(event.target.value)}
+            onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); handleRun() } }}
+            disabled={isRunning || !repoRoot}
+            placeholder={repoRoot ? 'Describe the problem to fix...' : 'Grant folder access first...'}
+            className="min-h-9 max-h-32 flex-1 resize-none bg-transparent px-1 py-1.5 leading-6 text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"
+          />
+          {isRunning ? (
+            <button type="button" className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--text-primary)] text-[var(--main-bg)]" onClick={onStop} aria-label="Stop agent"><Square size={15} /></button>
+          ) : (
+            <button type="button" className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--button-primary)] text-[var(--button-primary-text)] disabled:cursor-not-allowed disabled:opacity-30" onClick={handleRun} disabled={!problem.trim() || !repoRoot} aria-label="Run"><Send size={15} /></button>
+          )}
         </div>
       </div>
     </div>
@@ -92,6 +103,8 @@ export function AgentPanel({ repoRoot, autoApply, isRunning, steps, onSelectFold
 }
 
 function StepView({ event, onApproveDiff, onRejectDiff }: { event: AgentTranscriptEvent; onApproveDiff: () => void; onRejectDiff: () => void }) {
+  if (event.type === 'run-divider') return <div className="my-1 border-t border-dashed border-[var(--border)]" />
+
   if (event.type === 'user-message') {
     return (
       <div className="flex justify-end">

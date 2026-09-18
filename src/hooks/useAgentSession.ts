@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PortableAIAgentEvent, PortableAIDiffRow } from '../portableAI'
 
-export type AgentTranscriptEvent = PortableAIAgentEvent | { type: 'user-message'; message: string }
+export type AgentTranscriptEvent = PortableAIAgentEvent | { type: 'user-message'; message: string } | { type: 'run-divider' }
 export type AgentStep = { id: number; event: AgentTranscriptEvent }
 export type PendingDiff = { path: string; rows: PortableAIDiffRow[] }
 
@@ -46,20 +46,36 @@ export function useAgentSession() {
   }, [])
 
   const run = useCallback(async (problem: string) => {
-    stepIdRef.current += 1
-    setSteps([{ id: stepIdRef.current, event: { type: 'user-message', message: problem } }])
+    setSteps((previous) => {
+      const next = [...previous]
+      if (next.length > 0) {
+        stepIdRef.current += 1
+        next.push({ id: stepIdRef.current, event: { type: 'run-divider' } })
+      }
+      stepIdRef.current += 1
+      next.push({ id: stepIdRef.current, event: { type: 'user-message', message: problem } })
+      return next
+    })
     setPendingDiff(null)
     setIsRunning(true)
     try {
       await window.portableAI.agent.run(problem)
+    } catch (error) {
+      stepIdRef.current += 1
+      setSteps((previous) => [...previous, { id: stepIdRef.current, event: { type: 'error', message: error instanceof Error ? error.message : 'Could not start the agent' } }])
     } finally {
       setIsRunning(false)
     }
+  }, [])
+
+  const clearHistory = useCallback(() => {
+    setSteps([])
+    setPendingDiff(null)
   }, [])
 
   const approveDiff = useCallback(() => window.portableAI.agent.approveDiff(), [])
   const rejectDiff = useCallback(() => window.portableAI.agent.rejectDiff(), [])
   const stop = useCallback(() => window.portableAI.agent.stop(), [])
 
-  return { repoRoot, autoApply, isRunning, steps, pendingDiff, selectFolder, clearFolder, setAutoApply, run, approveDiff, rejectDiff, stop }
+  return { repoRoot, autoApply, isRunning, steps, pendingDiff, selectFolder, clearFolder, setAutoApply, run, clearHistory, approveDiff, rejectDiff, stop }
 }

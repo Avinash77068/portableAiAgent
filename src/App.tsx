@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowUp,
+  Check,
   ChevronDown,
+  Globe,
   MoonStar,
   Paperclip,
   Settings,
@@ -39,8 +41,10 @@ function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [searchValue, setSearchValue] = useState('')
   const [draft, setDraft] = useState('')
+  const [webSearchEnabled, setWebSearchEnabled] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isAgentOpen, setIsAgentOpen] = useState(false)
+  const [isModelMenuOpen, setIsModelMenuOpen] = useState(false)
   const agentSession = useAgentSession()
   const [toast, setToast] = useState<ToastState | null>(null)
   const [isSending, setIsSending] = useState(false)
@@ -217,12 +221,13 @@ function App() {
 
   const generateAssistantResponse = async (conversationId: string, attachments: PendingAttachment[] = []) => {
     setStreamingText('')
-    const result = await window.portableAI.ai.generate(conversationId, attachments)
+    const result = await window.portableAI.ai.generate(conversationId, attachments, webSearchEnabled)
     if (!result.text && result.stopped) return true
     if (!result.text) throw new Error('Local AI returned an empty response')
     const assistantMessage = await window.portableAI.messages.create(conversationId, 'assistant', result.text)
     setMessages((previous) => [...previous, assistantMessage])
     setStreamingText('')
+    if (result.usedWebSearch) showToast('Searched the web for this answer')
     if (result.error) throw new Error(result.error)
     return result.stopped
   }
@@ -412,9 +417,33 @@ function App() {
         onSettings={() => setIsSettingsOpen(true)}
       />
       <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-[var(--main-bg)]">
+        {isAgentOpen ? (
+          <AgentPanel
+            repoRoot={agentSession.repoRoot}
+            autoApply={agentSession.autoApply}
+            isRunning={agentSession.isRunning}
+            steps={agentSession.steps}
+            onSelectFolder={() => void agentSession.selectFolder()}
+            onClearFolder={() => void agentSession.clearFolder()}
+            onSetAutoApply={(value) => void agentSession.setAutoApply(value)}
+            onRun={(problem) => void agentSession.run(problem)}
+            onClearHistory={agentSession.clearHistory}
+            onApproveDiff={() => void agentSession.approveDiff()}
+            onRejectDiff={() => void agentSession.rejectDiff()}
+            onStop={() => void agentSession.stop()}
+            onClose={() => setIsAgentOpen(false)}
+          />
+        ) : (
+          <>
         <header className="flex items-center justify-between gap-[18px] bg-[var(--header-bg)] px-5 pb-3 pt-[18px]">
-          <div className="flex flex-1 items-center gap-2.5">
-            <button type="button" className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-[0.95rem] font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-hover)]">
+          <div className="relative flex flex-1 items-center gap-2.5">
+            <button
+              type="button"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-[0.95rem] font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-hover)]"
+              onClick={() => setIsModelMenuOpen((value) => !value)}
+              aria-expanded={isModelMenuOpen}
+              aria-haspopup="listbox"
+            >
               <span>{aiStatus?.selectedModel?.displayName ?? 'Local Model'}</span>
               <ChevronDown size={15} className="text-[var(--text-muted)]" />
             </button>
@@ -422,6 +451,36 @@ function App() {
               <span className={`size-1.5 rounded-full bg-[var(--success)] ${aiStatus?.state === 'ERROR' || !aiStatus?.runtimeAvailable ? 'bg-orange-500' : ''}`} />
               {formatAIStatus(aiStatus)}
             </div>
+
+            {isModelMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-30" onClick={() => setIsModelMenuOpen(false)} />
+                <div className="absolute left-0 top-11 z-40 w-64 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--modal-bg)] py-1.5 shadow-[0_18px_34px_rgba(15,23,42,0.18)]" role="listbox">
+                  {aiModels.length === 0 ? (
+                    <div className="px-3.5 py-2.5 text-sm text-[var(--text-muted)]">No local model found</div>
+                  ) : aiModels.map((model) => (
+                    <button
+                      key={model.id}
+                      type="button"
+                      role="option"
+                      aria-selected={model.id === aiStatus?.selectedModel?.id}
+                      disabled={isSending}
+                      className={`flex w-full items-center justify-between gap-2 px-3.5 py-2.5 text-left text-sm disabled:cursor-not-allowed disabled:opacity-50 ${model.id === aiStatus?.selectedModel?.id ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]'}`}
+                      onClick={() => {
+                        setIsModelMenuOpen(false)
+                        if (model.id === aiStatus?.selectedModel?.id) return
+                        void window.portableAI.ai.selectModel(model.id)
+                          .then(setAiStatus)
+                          .catch(() => showToast('Could not select model'))
+                      }}
+                    >
+                      <span className="truncate">{model.displayName}</span>
+                      {model.id === aiStatus?.selectedModel?.id && <Check size={14} className="shrink-0" />}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           <div className="flex items-center gap-1">
@@ -484,6 +543,16 @@ function App() {
                   <Paperclip size={17} />
                   <input type="file" accept={[...supportedAttachmentExtensions].join(',')} onChange={handleAttachment} className="absolute inset-0 cursor-pointer opacity-0" />
                 </label>
+                <button
+                  type="button"
+                  className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm ${webSearchEnabled ? 'border-transparent bg-[var(--accent)] text-[var(--button-primary-text)]' : 'border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]'}`}
+                  onClick={() => setWebSearchEnabled((value) => !value)}
+                  title="Search the web for this message"
+                  aria-pressed={webSearchEnabled}
+                >
+                  <Globe size={15} />
+                  Search
+                </button>
                   <textarea
                   ref={composerRef}
                   rows={1}
@@ -520,24 +589,9 @@ function App() {
             </div>
           </div>
         )}
+          </>
+        )}
       </main>
-
-      {isAgentOpen && (
-        <AgentPanel
-          repoRoot={agentSession.repoRoot}
-          autoApply={agentSession.autoApply}
-          isRunning={agentSession.isRunning}
-          steps={agentSession.steps}
-          onSelectFolder={() => void agentSession.selectFolder()}
-          onClearFolder={() => void agentSession.clearFolder()}
-          onSetAutoApply={(value) => void agentSession.setAutoApply(value)}
-          onRun={(problem) => void agentSession.run(problem)}
-          onApproveDiff={() => void agentSession.approveDiff()}
-          onRejectDiff={() => void agentSession.rejectDiff()}
-          onStop={() => void agentSession.stop()}
-          onClose={() => setIsAgentOpen(false)}
-        />
-      )}
 
       {isSettingsOpen && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-[rgba(15,23,42,0.54)]" onClick={() => setIsSettingsOpen(false)}>
@@ -611,8 +665,9 @@ function App() {
               <Section title="Privacy">
                 <div className="grid gap-2 text-[var(--text-secondary)]">
                   <span className="inline-flex items-center gap-2"><ShieldCheck size={14} /> Local-first architecture</span>
-                  <span className="inline-flex items-center gap-2"><ShieldCheck size={14} /> No cloud AI</span>
+                  <span className="inline-flex items-center gap-2"><ShieldCheck size={14} /> No cloud AI - all responses generated on this device</span>
                   <span className="inline-flex items-center gap-2"><ShieldCheck size={14} /> No telemetry</span>
+                  <span className="inline-flex items-center gap-2"><Globe size={14} /> Web Search (optional, per-message) sends your message to DuckDuckGo</span>
                 </div>
               </Section>
 

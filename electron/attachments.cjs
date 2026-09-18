@@ -24,7 +24,7 @@ const validateSource = ({ name, type, size, sourcePath }) => {
 }
 
 const saveAttachment = (payload) => {
-  const { name, type, size } = payload
+  const { name, type } = payload
   const { extension, imageType, buffer } = validateSource(payload)
   const id = randomUUID()
   fs.mkdirSync(getDirectory(), { recursive: true })

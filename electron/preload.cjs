@@ -31,7 +31,7 @@ contextBridge.exposeInMainWorld('portableAI', {
     selectModel: (modelId) => ipcRenderer.invoke('portableai:ai:select-model', modelId),
     start: () => ipcRenderer.invoke('portableai:ai:start'),
     stop: () => ipcRenderer.invoke('portableai:ai:stop'),
-    generate: (conversationId, attachments) => ipcRenderer.invoke('portableai:ai:generate', { conversationId, attachments }),
+    generate: (conversationId, attachments, webSearchEnabled) => ipcRenderer.invoke('portableai:ai:generate', { conversationId, attachments, webSearchEnabled }),
     stopGeneration: () => ipcRenderer.invoke('portableai:ai:stop-generation'),
     onStatus: (listener) => {
       const handler = (_, status) => listener(status)

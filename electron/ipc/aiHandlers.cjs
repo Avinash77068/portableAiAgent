@@ -26,11 +26,11 @@ const registerAIHandlers = () => {
     manager.stopGeneration()
     return manager.getStatus()
   })
-  ipcMain.handle('portableai:ai:generate', async (event, { conversationId, attachments = [] }) => {
+  ipcMain.handle('portableai:ai:generate', async (event, { conversationId, attachments = [], webSearchEnabled = false }) => {
     const messages = listMessages(conversationId)
     const result = await manager.generate(messages, (delta) => {
       if (!event.sender.isDestroyed()) event.sender.send('portableai:ai:stream', { type: 'delta', delta })
-    }, attachments)
+    }, attachments, webSearchEnabled)
     return result
   })
 

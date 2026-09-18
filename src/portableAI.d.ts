@@ -26,7 +26,7 @@ declare global {
         selectModel: (modelId: string) => Promise<PortableAIStatus>
         start: () => Promise<PortableAIStatus>
         stop: () => Promise<PortableAIStatus>
-        generate: (conversationId: string, attachments?: PortableAIAttachment[]) => Promise<{ text: string; stopped: boolean; error?: string }>
+        generate: (conversationId: string, attachments?: PortableAIAttachment[], webSearchEnabled?: boolean) => Promise<{ text: string; stopped: boolean; error?: string; usedWebSearch?: boolean }>
         stopGeneration: () => Promise<PortableAIStatus>
         onStatus: (listener: (status: PortableAIStatus) => void) => () => void
         onStream: (listener: (event: PortableAIStreamEvent) => void) => () => void
