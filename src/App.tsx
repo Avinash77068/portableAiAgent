@@ -398,24 +398,26 @@ function App() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[var(--app-bg)] text-[var(--text-primary)]">
-      <Sidebar
-        collapsed={sidebarCollapsed}
-        conversations={conversations}
-        groupedConversations={groupedConversations}
-        selectedId={selectedId}
-        searchValue={searchValue}
-        isSending={isSending}
-        aiStatusLabel={formatAIStatus(aiStatus)}
-        hasStatusError={aiStatus?.state === 'ERROR' || !aiStatus?.runtimeAvailable}
-        searchInputRef={searchInputRef}
-        onToggle={() => setSidebarCollapsed((value) => !value)}
-        onNewChat={() => void handleNewChat()}
-        onSearchChange={setSearchValue}
-        onSelect={setSelectedId}
-        onRename={handleRename}
-        onDelete={handleDelete}
-        onSettings={() => setIsSettingsOpen(true)}
-      />
+      {!isAgentOpen && (
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          conversations={conversations}
+          groupedConversations={groupedConversations}
+          selectedId={selectedId}
+          searchValue={searchValue}
+          isSending={isSending}
+          aiStatusLabel={formatAIStatus(aiStatus)}
+          hasStatusError={aiStatus?.state === 'ERROR' || !aiStatus?.runtimeAvailable}
+          searchInputRef={searchInputRef}
+          onToggle={() => setSidebarCollapsed((value) => !value)}
+          onNewChat={() => void handleNewChat()}
+          onSearchChange={setSearchValue}
+          onSelect={setSelectedId}
+          onRename={handleRename}
+          onDelete={handleDelete}
+          onSettings={() => setIsSettingsOpen(true)}
+        />
+      )}
       <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-[var(--main-bg)]">
         {isAgentOpen ? (
           <AgentPanel
@@ -423,11 +425,16 @@ function App() {
             autoApply={agentSession.autoApply}
             isRunning={agentSession.isRunning}
             steps={agentSession.steps}
+            conversations={agentSession.conversations}
+            activeConversationId={agentSession.activeConversationId}
             onSelectFolder={() => void agentSession.selectFolder()}
             onClearFolder={() => void agentSession.clearFolder()}
             onSetAutoApply={(value) => void agentSession.setAutoApply(value)}
             onRun={(problem) => void agentSession.run(problem)}
-            onClearHistory={agentSession.clearHistory}
+            onSelectConversation={(id) => void agentSession.selectConversation(id)}
+            onStartNewSession={agentSession.startNewSession}
+            onRenameConversation={(id, title) => void agentSession.renameConversation(id, title)}
+            onDeleteConversation={(id) => void agentSession.deleteConversation(id)}
             onApproveDiff={() => void agentSession.approveDiff()}
             onRejectDiff={() => void agentSession.rejectDiff()}
             onStop={() => void agentSession.stop()}

@@ -1,8 +1,8 @@
 const fs = require('node:fs')
 const path = require('node:path')
-const { resolveInRepo } = require('./repoAccess.cjs')
+const { resolveInRepo, BLOCKED_DIRECTORY_NAMES } = require('./repoAccess.cjs')
 
-const IGNORED_DIRECTORIES = new Set(['node_modules', '.git', 'dist', 'dist-ssr', 'release', 'usb-build', 'build', '.next', '.venv', '__pycache__'])
+const IGNORED_DIRECTORIES = BLOCKED_DIRECTORY_NAMES
 const MAX_READ_CHARS = 40000
 const MAX_TREE_ENTRIES = 400
 const MAX_SEARCH_RESULTS = 60
@@ -103,9 +103,15 @@ const searchFiles = (repoRoot, query) => {
   return matches
 }
 
+// .env files hold secrets (API keys, credentials) - blocked here at the
+// sandbox layer rather than only asked for in the system prompt, since a small
+// local model won't reliably honor a "please don't" instruction on its own.
+const ENV_FILE_PATTERN = /^\.env(\..+)?$/i
+
 const writeFile = (repoRoot, relativePath, content) => {
   if (typeof content !== 'string') throw new Error('File content must be a string')
   const resolved = resolveInRepo(repoRoot, relativePath)
+  if (ENV_FILE_PATTERN.test(path.basename(resolved))) throw new Error(`Refusing to write to "${relativePath}" - .env files are never modified by the agent.`)
   fs.mkdirSync(path.dirname(resolved), { recursive: true })
   fs.writeFileSync(resolved, content, 'utf8')
 }

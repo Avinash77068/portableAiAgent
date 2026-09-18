@@ -21,6 +21,8 @@ const setRepoRoot = (repoRoot) => {
 
 const clearRepoRoot = () => writeSettingsKey('agentRepoRoot', null)
 
+const BLOCKED_DIRECTORY_NAMES = new Set(['node_modules', '.git','package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'dist', 'dist-ssr', 'release', 'usb-build', 'build', '.next', '.venv', '__pycache__'])
+
 const findExistingAncestor = (targetPath) => {
   let current = targetPath
   while (!fs.existsSync(current)) {
@@ -43,6 +45,9 @@ const resolveInRepo = (repoRoot, relativePath) => {
   const relative = path.relative(repoRoot, resolved)
   if (relative.startsWith('..') || path.isAbsolute(relative)) throw new Error(`Path "${relativePath}" is outside the granted folder`)
 
+  const blockedSegment = relative.split(path.sep).find((segment) => BLOCKED_DIRECTORY_NAMES.has(segment))
+  if (blockedSegment) throw new Error(`Path "${relativePath}" is inside "${blockedSegment}", which is off-limits`)
+
   const realRoot = fs.realpathSync(repoRoot)
   const realAncestor = fs.realpathSync(findExistingAncestor(resolved))
   const realRelative = path.relative(realRoot, realAncestor)
@@ -51,4 +56,4 @@ const resolveInRepo = (repoRoot, relativePath) => {
   return resolved
 }
 
-module.exports = { getRepoRoot, setRepoRoot, clearRepoRoot, resolveInRepo }
+module.exports = { getRepoRoot, setRepoRoot, clearRepoRoot, resolveInRepo, BLOCKED_DIRECTORY_NAMES }

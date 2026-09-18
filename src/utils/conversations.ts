@@ -1,4 +1,4 @@
-import type { PortableAIConversation } from '../portableAI'
+type GroupableConversation = { title: string; updated_at: number }
 
 export const getConversationGroup = (updatedAt: number) => {
   const now = new Date()
@@ -18,9 +18,9 @@ export const createConversationTitle = (message: string) => {
   return normalized.length > 50 ? `${normalized.slice(0, 47).trim()}...` : normalized
 }
 
-export const groupConversations = (conversations: PortableAIConversation[], searchValue: string) => {
+export const groupConversations = <T extends GroupableConversation>(conversations: T[], searchValue: string): Record<string, T[]> => {
   const query = searchValue.trim().toLowerCase()
-  const groups: Record<string, PortableAIConversation[]> = { Today: [], Yesterday: [], 'Previous 7 Days': [], Older: [] }
+  const groups: Record<string, T[]> = { Today: [], Yesterday: [], 'Previous 7 Days': [], Older: [] }
   for (const conversation of conversations) {
     if (query && !conversation.title.toLowerCase().includes(query)) continue
     groups[getConversationGroup(conversation.updated_at)].push(conversation)

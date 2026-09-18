@@ -15,13 +15,6 @@ const registerAIHandlers = () => {
   ipcMain.handle('portableai:ai:get-status', () => manager.getStatus())
   ipcMain.handle('portableai:ai:get-models', () => manager.getModels())
   ipcMain.handle('portableai:ai:select-model', (_, modelId) => manager.selectModel(modelId))
-  ipcMain.handle('portableai:ai:start', async () => {
-    return manager.start()
-  })
-  ipcMain.handle('portableai:ai:stop', async () => {
-    await manager.stop()
-    return manager.getStatus()
-  })
   ipcMain.handle('portableai:ai:stop-generation', () => {
     manager.stopGeneration()
     return manager.getStatus()
@@ -34,7 +27,6 @@ const registerAIHandlers = () => {
     return result
   })
 
-  ipcMain.handle('portableai:models:refresh', () => manager.getModels())
   return manager
 }
 

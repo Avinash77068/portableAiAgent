@@ -48,6 +48,22 @@ const initializeDatabase = () => {
     );
     CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON messages (conversation_id, created_at);
     CREATE INDEX IF NOT EXISTS idx_conversations_updated_at ON conversations (updated_at DESC);
+    CREATE TABLE IF NOT EXISTS agent_conversations (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      repo_root TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS agent_steps (
+      id TEXT PRIMARY KEY,
+      conversation_id TEXT NOT NULL,
+      event TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY (conversation_id) REFERENCES agent_conversations(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_agent_steps_conversation_id ON agent_steps (conversation_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_agent_conversations_updated_at ON agent_conversations (updated_at DESC);
   `)
   databaseInstance = database
   return database
@@ -62,4 +78,4 @@ const closeDatabase = () => {
   }
 }
 
-module.exports = { resolvePortableRoot, resolveDataDirectory, getDatabasePath, getDatabase, initializeDatabase, closeDatabase }
+module.exports = { resolvePortableRoot, getDatabase, initializeDatabase, closeDatabase }

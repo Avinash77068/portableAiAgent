@@ -4,7 +4,6 @@ declare global {
       conversations: {
         list: () => Promise<PortableAIConversation[]>
         create: (title?: string) => Promise<PortableAIConversation>
-        get: (conversationId: string) => Promise<PortableAIConversation | null>
         rename: (conversationId: string, title: string) => Promise<PortableAIConversation>
         delete: (conversationId: string) => Promise<boolean>
       }
@@ -24,8 +23,6 @@ declare global {
         getStatus: () => Promise<PortableAIStatus>
         getModels: () => Promise<PortableAIModel[]>
         selectModel: (modelId: string) => Promise<PortableAIStatus>
-        start: () => Promise<PortableAIStatus>
-        stop: () => Promise<PortableAIStatus>
         generate: (conversationId: string, attachments?: PortableAIAttachment[], webSearchEnabled?: boolean) => Promise<{ text: string; stopped: boolean; error?: string; usedWebSearch?: boolean }>
         stopGeneration: () => Promise<PortableAIStatus>
         onStatus: (listener: (status: PortableAIStatus) => void) => () => void
@@ -36,11 +33,20 @@ declare global {
         getInfo: () => Promise<PortableAIAgentInfo>
         clearFolder: () => Promise<null>
         setAutoApply: (value: boolean) => Promise<boolean>
-        run: (problem: string) => Promise<boolean>
+        run: (conversationId: string | null, problem: string) => Promise<{ conversationId: string }>
         approveDiff: () => Promise<boolean>
         rejectDiff: () => Promise<boolean>
         stop: () => Promise<boolean>
         onEvent: (listener: (event: PortableAIAgentEvent) => void) => () => void
+        onConversationStarted: (listener: (payload: { conversationId: string }) => void) => () => void
+      }
+      agentConversations: {
+        list: () => Promise<PortableAIAgentConversation[]>
+        rename: (conversationId: string, title: string) => Promise<PortableAIAgentConversation>
+        delete: (conversationId: string) => Promise<boolean>
+      }
+      agentSteps: {
+        list: (conversationId: string) => Promise<PortableAIAgentStep[]>
       }
     }
   }
@@ -141,5 +147,20 @@ export type PortableAIAgentEvent =
   | { type: 'diff-rejected'; path: string }
   | { type: 'final'; message: string }
   | { type: 'error'; message: string }
+
+export type PortableAIAgentConversation = {
+  id: string
+  title: string
+  repo_root: string | null
+  created_at: number
+  updated_at: number
+}
+
+export type PortableAIAgentStep = {
+  id: string
+  conversation_id: string
+  event: PortableAIAgentEvent | { type: 'user-message'; message: string } | { type: 'run-divider' }
+  created_at: number
+}
 
 export {}

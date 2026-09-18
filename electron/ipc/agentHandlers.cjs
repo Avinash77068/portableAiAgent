@@ -2,6 +2,14 @@ const { ipcMain, dialog, BrowserWindow } = require('electron')
 const { getRepoRoot, setRepoRoot, clearRepoRoot } = require('../agent/repoAccess.cjs')
 const { AgentSession } = require('../agent/AgentSession.cjs')
 const { readSettings, writeSettingsKey } = require('../settings.cjs')
+const {
+  listAgentConversations,
+  createAgentConversation,
+  renameAgentConversation,
+  deleteAgentConversation,
+  listAgentSteps,
+  createAgentStep,
+} = require('../database/agentSessions.cjs')
 
 const registerAgentHandlers = (aiManager) => {
   let activeSession = null
@@ -33,20 +41,41 @@ const registerAgentHandlers = (aiManager) => {
     return autoApply
   })
 
-  ipcMain.handle('portableai:agent:run', async (_, problem) => {
+  ipcMain.handle('portableai:agent-conversations:list', () => listAgentConversations())
+  ipcMain.handle('portableai:agent-conversations:rename', (_, payload) => {
+    const { conversationId, title } = payload ?? {}
+    return renameAgentConversation(conversationId, title)
+  })
+  ipcMain.handle('portableai:agent-conversations:delete', (_, conversationId) => {
+    deleteAgentConversation(conversationId)
+    return true
+  })
+  ipcMain.handle('portableai:agent-steps:list', (_, conversationId) => listAgentSteps(conversationId))
+
+  ipcMain.handle('portableai:agent:run', async (_, payload) => {
+    const { conversationId: requestedConversationId, problem } = payload ?? {}
     const repoRoot = getRepoRoot()
     if (!repoRoot) throw new Error('No repository folder is selected yet')
     if (activeSession) throw new Error('An agent run is already in progress')
     if (!aiManager.getSelectedModel()) throw new Error('No local model available')
 
+    const conversationId = requestedConversationId ?? createAgentConversation(problem, repoRoot).id
+    broadcast('portableai:agent:conversation-started', { conversationId })
+
+    if (listAgentSteps(conversationId).length > 0) createAgentStep(conversationId, { type: 'run-divider' })
+    createAgentStep(conversationId, { type: 'user-message', message: problem })
+
     await aiManager.start()
     activeSession = new AgentSession({ repoRoot, server: aiManager.server, getAutoApply: () => autoApply })
     try {
-      await activeSession.run(problem, (event) => broadcast('portableai:agent:event', event))
+      await activeSession.run(problem, (event) => {
+        createAgentStep(conversationId, event)
+        broadcast('portableai:agent:event', event)
+      })
     } finally {
       activeSession = null
     }
-    return true
+    return { conversationId }
   })
 
   ipcMain.handle('portableai:agent:approve-diff', () => {

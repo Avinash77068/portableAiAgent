@@ -4,7 +4,6 @@ contextBridge.exposeInMainWorld('portableAI', {
   conversations: {
     list: () => ipcRenderer.invoke('portableai:conversations:list'),
     create: (title) => ipcRenderer.invoke('portableai:conversations:create', title),
-    get: (conversationId) => ipcRenderer.invoke('portableai:conversations:get', conversationId),
     rename: (conversationId, title) => ipcRenderer.invoke('portableai:conversations:rename', { conversationId, title }),
     delete: (conversationId) => ipcRenderer.invoke('portableai:conversations:delete', conversationId),
   },
@@ -29,8 +28,6 @@ contextBridge.exposeInMainWorld('portableAI', {
     getStatus: () => ipcRenderer.invoke('portableai:ai:get-status'),
     getModels: () => ipcRenderer.invoke('portableai:ai:get-models'),
     selectModel: (modelId) => ipcRenderer.invoke('portableai:ai:select-model', modelId),
-    start: () => ipcRenderer.invoke('portableai:ai:start'),
-    stop: () => ipcRenderer.invoke('portableai:ai:stop'),
     generate: (conversationId, attachments, webSearchEnabled) => ipcRenderer.invoke('portableai:ai:generate', { conversationId, attachments, webSearchEnabled }),
     stopGeneration: () => ipcRenderer.invoke('portableai:ai:stop-generation'),
     onStatus: (listener) => {
@@ -49,7 +46,7 @@ contextBridge.exposeInMainWorld('portableAI', {
     getInfo: () => ipcRenderer.invoke('portableai:agent:get-info'),
     clearFolder: () => ipcRenderer.invoke('portableai:agent:clear-folder'),
     setAutoApply: (value) => ipcRenderer.invoke('portableai:agent:set-auto-apply', value),
-    run: (problem) => ipcRenderer.invoke('portableai:agent:run', problem),
+    run: (conversationId, problem) => ipcRenderer.invoke('portableai:agent:run', { conversationId, problem }),
     approveDiff: () => ipcRenderer.invoke('portableai:agent:approve-diff'),
     rejectDiff: () => ipcRenderer.invoke('portableai:agent:reject-diff'),
     stop: () => ipcRenderer.invoke('portableai:agent:stop'),
@@ -58,5 +55,18 @@ contextBridge.exposeInMainWorld('portableAI', {
       ipcRenderer.on('portableai:agent:event', handler)
       return () => ipcRenderer.removeListener('portableai:agent:event', handler)
     },
+    onConversationStarted: (listener) => {
+      const handler = (_, payload) => listener(payload)
+      ipcRenderer.on('portableai:agent:conversation-started', handler)
+      return () => ipcRenderer.removeListener('portableai:agent:conversation-started', handler)
+    },
+  },
+  agentConversations: {
+    list: () => ipcRenderer.invoke('portableai:agent-conversations:list'),
+    rename: (conversationId, title) => ipcRenderer.invoke('portableai:agent-conversations:rename', { conversationId, title }),
+    delete: (conversationId) => ipcRenderer.invoke('portableai:agent-conversations:delete', conversationId),
+  },
+  agentSteps: {
+    list: (conversationId) => ipcRenderer.invoke('portableai:agent-steps:list', conversationId),
   },
 })

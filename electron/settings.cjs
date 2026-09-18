@@ -20,4 +20,4 @@ const writeSettingsKey = (key, value) => {
   fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2))
 }
 
-module.exports = { getSettingsPath, readSettings, writeSettingsKey }
+module.exports = { readSettings, writeSettingsKey }

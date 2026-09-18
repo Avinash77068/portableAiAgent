@@ -44,4 +44,4 @@ const deleteConversation = (conversationId) => {
   return true
 }
 
-module.exports = { listConversations, getConversation, createConversation, renameConversation, deleteConversation }
+module.exports = { listConversations, createConversation, renameConversation, deleteConversation }

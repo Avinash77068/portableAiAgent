@@ -101,4 +101,4 @@ const initializeHardware = () => {
 // it's computed fresh here rather than baked into that cached snapshot.
 const computeAIConfig = (selectedModel) => getModelAwareAIConfig(initializeHardware(), selectedModel)
 
-module.exports = { detectHardware, initializeHardware, computeAIConfig }
+module.exports = { initializeHardware, computeAIConfig }

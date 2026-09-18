@@ -64,4 +64,4 @@ const validateModel = (model) => {
   }
 }
 
-module.exports = { getModelsDirectory, listModels, validateModel, readSelectedModelId, writeSelectedModelId }
+module.exports = { listModels, validateModel, readSelectedModelId, writeSelectedModelId }

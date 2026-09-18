@@ -1,4 +1,9 @@
 const { listTree, readFile, searchFiles } = require('./fileTools.cjs')
+const { searchWeb } = require('../ai/webSearch.cjs')
+
+const formatWebResults = (results) => results.length === 0
+  ? '(no results)'
+  : results.map((result, index) => `${index + 1}. ${result.title}\n${result.snippet}\n(${result.url})`).join('\n\n')
 
 const TOOL_SCHEMAS = [
   {
@@ -39,6 +44,18 @@ const TOOL_SCHEMAS = [
   {
     type: 'function',
     function: {
+      name: 'web_search',
+      description: 'Search the public web. Use this only when something cannot be understood from the repository alone - an unfamiliar error message, an API/library you do not recognize, or a convention that is not explained by the code itself. Always cross-check results against the actual files in this repo before acting on them; never apply a found suggestion as-is without verifying it fits this codebase.',
+      parameters: {
+        type: 'object',
+        properties: { query: { type: 'string', description: 'Search query.' } },
+        required: ['query'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'write_file',
       description: 'Propose replacing the full contents of a file inside the granted repository with new content. Shown to the user as a diff before it is applied, unless auto-apply is enabled. Always read_file first.',
       parameters: {
@@ -53,10 +70,11 @@ const TOOL_SCHEMAS = [
   },
 ]
 
-const executeReadOnlyTool = (repoRoot, name, args) => {
+const executeReadOnlyTool = async (repoRoot, name, args) => {
   if (name === 'list_files') return listTree(repoRoot, args.path ?? '.').join('\n') || '(empty folder)'
   if (name === 'read_file') return readFile(repoRoot, args.path)
   if (name === 'search_files') return searchFiles(repoRoot, args.query).join('\n') || '(no matches)'
+  if (name === 'web_search') return formatWebResults(await searchWeb(args.query))
   return null
 }
 
